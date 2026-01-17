@@ -18,6 +18,7 @@ COPY shared/ ./shared/
 
 # Copy service code
 COPY services/auth/ ./services/auth/
+RUN touch ./services/__init__.py
 
 # Set Python path
 ENV PYTHONPATH=/app

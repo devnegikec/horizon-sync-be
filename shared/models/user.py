@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, Enum, ForeignKey, String, Text
+    Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, relationship
@@ -125,11 +125,6 @@ class User(Base, UUIDMixin, TimestampMixin):
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}')>"
-
-
-# Import Integer at module level (was missing)
-from sqlalchemy import Integer
-
 
 class UserOrganizationRole(Base, UUIDMixin, TimestampMixin):
     """
