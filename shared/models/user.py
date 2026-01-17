@@ -87,8 +87,8 @@ class User(Base, UUIDMixin, TimestampMixin):
     timezone = Column(String(50), default="UTC")
     language = Column(String(10), default="en")
     
-    # Metadata
-    metadata = Column(JSONB, default=dict)
+    # Extra data
+    extra_data = Column(JSONB, default=dict)
     
     # Soft delete
     deleted_at = Column(DateTime(timezone=True), nullable=True)
@@ -168,8 +168,8 @@ class UserOrganizationRole(Base, UUIDMixin, TimestampMixin):
     invited_at = Column(DateTime(timezone=True), nullable=True)
     joined_at = Column(DateTime(timezone=True), nullable=True)
     
-    # Metadata
-    metadata = Column(JSONB, default=dict)
+    # Extra data
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     user: Mapped["User"] = relationship(

@@ -181,9 +181,9 @@ class SubscriptionService:
         new_plan: SubscriptionPlan,
     ) -> Subscription:
         """Schedule downgrade at end of billing period."""
-        # Store pending change in metadata
-        subscription.metadata = subscription.metadata or {}
-        subscription.metadata["pending_downgrade"] = {
+        # Store pending change in extra_data
+        subscription.extra_data = subscription.extra_data or {}
+        subscription.extra_data["pending_downgrade"] = {
             "new_plan_id": str(new_plan.id),
             "scheduled_at": datetime.utcnow().isoformat(),
         }

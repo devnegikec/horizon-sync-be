@@ -26,5 +26,5 @@ class Warehouse(Base, UUIDMixin, TimestampMixin, TenantMixin):
     is_active = Column(Boolean, default=True)
     is_default = Column(Boolean, default=False)
     
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     deleted_at = Column(DateTime(timezone=True), nullable=True)

@@ -69,7 +69,7 @@ class Ticket(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
     
     tags = Column(JSONB, default=list)
     custom_fields = Column(JSONB, default=dict)
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     
     comments: Mapped[list["TicketComment"]] = relationship("TicketComment", back_populates="ticket", cascade="all, delete-orphan")

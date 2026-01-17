@@ -90,8 +90,8 @@ class Organization(Base, UUIDMixin, TimestampMixin):
     # Settings stored as JSON
     settings = Column(JSONB, default=dict, nullable=False)
     
-    # Metadata
-    metadata = Column(JSONB, default=dict, nullable=False)
+    # Extra data
+    extra_data = Column(JSONB, default=dict, nullable=False)
     
     # Ownership
     owner_id = Column(UUID(as_uuid=True), nullable=True)

@@ -206,7 +206,7 @@ async def _create_audit_log(
         user_agent=user_agent,
         request_id=request_id,
         description=description,
-        metadata=metadata or {},
+        extra_data=metadata or {},
     )
     
     session.add(audit_log)

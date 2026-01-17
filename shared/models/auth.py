@@ -189,7 +189,7 @@ class Invitation(Base, UUIDMixin):
     message = Column(Text, nullable=True)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     @property
     def is_valid(self) -> bool:

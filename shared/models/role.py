@@ -53,7 +53,7 @@ class Role(Base, UUIDMixin, TimestampMixin):
     is_active = Column(Boolean, default=True)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     organization: Mapped[Optional["Organization"]] = relationship(
@@ -148,7 +148,7 @@ class Permission(Base, UUIDMixin, TimestampMixin):
     is_active = Column(Boolean, default=True)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     role_permissions: Mapped[List["RolePermission"]] = relationship(

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -39,27 +37,7 @@ services:
     networks:
       - horizon_network
 
-  # RabbitMQ Message Broker (Optional)
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: horizon_rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-horizon}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-horizon_rabbit}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - horizon_network
-
-  # Auth Service
+  # Auth Service (Debug Mode)
   auth-service:
     build:
       context: .
@@ -73,6 +51,7 @@ services:
       - JWT_ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
       - REFRESH_TOKEN_EXPIRE_DAYS=7
+      - DEBUG=true
     ports:
       - "8001:8000"
     depends_on:
@@ -83,112 +62,9 @@ services:
     networks:
       - horizon_network
 
-  # User Management Service
-  user-management-service:
-    build:
-      context: .
-      dockerfile: services/user_management/Dockerfile
-    container_name: horizon_user_management
-    environment:
-      - SERVICE_NAME=user_management
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-horizon}:${POSTGRES_PASSWORD:-horizon_secret}@postgres:5432/${POSTGRES_DB:-horizon_erp}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-horizon_redis}@redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
-    ports:
-      - "8002:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - horizon_network
-
-  # Lead-to-Order Service
-  lead-to-order-service:
-    build:
-      context: .
-      dockerfile: services/lead_to_order/Dockerfile
-    container_name: horizon_lead_to_order
-    environment:
-      - SERVICE_NAME=lead_to_order
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-horizon}:${POSTGRES_PASSWORD:-horizon_secret}@postgres:5432/${POSTGRES_DB:-horizon_erp}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-horizon_redis}@redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
-    ports:
-      - "8003:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - horizon_network
-
-  # Support Ticket Service
-  support-ticket-service:
-    build:
-      context: .
-      dockerfile: services/support_ticket/Dockerfile
-    container_name: horizon_support_ticket
-    environment:
-      - SERVICE_NAME=support_ticket
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-horizon}:${POSTGRES_PASSWORD:-horizon_secret}@postgres:5432/${POSTGRES_DB:-horizon_erp}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-horizon_redis}@redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
-    ports:
-      - "8004:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - horizon_network
-
-  # Inventory Service
-  inventory-service:
-    build:
-      context: .
-      dockerfile: services/inventory/Dockerfile
-    container_name: horizon_inventory
-    environment:
-      - SERVICE_NAME=inventory
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-horizon}:${POSTGRES_PASSWORD:-horizon_secret}@postgres:5432/${POSTGRES_DB:-horizon_erp}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-horizon_redis}@redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
-    ports:
-      - "8005:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - horizon_network
-
-  # API Gateway (NGINX)
-  api-gateway:
-    image: nginx:alpine
-    container_name: horizon_gateway
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - auth-service
-      - user-management-service
-      - lead-to-order-service
-      - support-ticket-service
-      - inventory-service
-    networks:
-      - horizon_network
-
 volumes:
   postgres_data:
   redis_data:
-  rabbitmq_data:
 
 networks:
   horizon_network:

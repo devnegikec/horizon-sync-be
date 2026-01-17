@@ -17,6 +17,6 @@ class TicketComment(Base, UUIDMixin, TimestampMixin):
     is_resolution = Column(Boolean, default=False)
     
     attachments = Column(JSONB, default=list)
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="comments")
