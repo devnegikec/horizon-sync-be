@@ -124,7 +124,7 @@ class AuditService:
             ip_address=ip_address,
             user_agent=user_agent,
             description=description,
-            metadata=metadata or {},
+            extra_data=metadata or {},
         )
         
         self.db.add(audit_log)

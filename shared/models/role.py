@@ -3,7 +3,7 @@ import enum
 from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, relationship
 
@@ -53,7 +53,7 @@ class Role(Base, UUIDMixin, TimestampMixin):
     is_active = Column(Boolean, default=True)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     organization: Mapped[Optional["Organization"]] = relationship(
@@ -81,11 +81,6 @@ class Role(Base, UUIDMixin, TimestampMixin):
     
     def __repr__(self):
         return f"<Role(name='{self.name}', code='{self.code}')>"
-
-
-# Import Integer at module level
-from sqlalchemy import Integer
-
 
 class ResourceType(str, enum.Enum):
     """Types of resources that can be permissioned."""
@@ -148,7 +143,7 @@ class Permission(Base, UUIDMixin, TimestampMixin):
     is_active = Column(Boolean, default=True)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     role_permissions: Mapped[List["RolePermission"]] = relationship(

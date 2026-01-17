@@ -158,8 +158,8 @@ class Subscription(Base, UUIDMixin, TimestampMixin):
     current_teams = Column(Integer, default=0)
     current_storage_mb = Column(Integer, default=0)
     
-    # Metadata
-    metadata = Column(JSONB, default=dict)
+    # Extra data
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     organization: Mapped["Organization"] = relationship(

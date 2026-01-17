@@ -16,6 +16,8 @@ from shared.models.role import Role
 from shared.schemas.auth import (
     LoginRequest,
     LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
     RefreshRequest,
     RefreshResponse,
     LogoutRequest,
@@ -36,6 +38,48 @@ from shared.security.jwt import TokenPayload
 from services.auth.services.auth_service import AuthService
 
 router = APIRouter()
+
+
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+async def register(
+    register_data: RegisterRequest,
+    db: AsyncSession = Depends(get_async_session)
+):
+    """
+    Register a new user and create their organization.
+    
+    - Checks if email is already registered
+    - Creates user account
+    - Creates initial organization
+    - Assigns owner role
+    """
+    auth_service = AuthService(db)
+    
+    # Check if user already exists
+    existing_user = await auth_service.get_user_by_email(register_data.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists"
+        )
+    
+    # Register user and organization
+    user, organization = await auth_service.register_user(
+        email=register_data.email,
+        password=register_data.password,
+        first_name=register_data.first_name,
+        last_name=register_data.last_name,
+        organization_name=register_data.organization_name
+    )
+    
+    await db.commit()
+    
+    return RegisterResponse(
+        user_id=user.id,
+        email=user.email,
+        organization_id=organization.id,
+        message="Account created successfully. You can now login."
+    )
 
 
 @router.post("/login", response_model=LoginResponse)

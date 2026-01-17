@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, Enum, ForeignKey, String, Text
+    Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, relationship
@@ -87,8 +87,8 @@ class User(Base, UUIDMixin, TimestampMixin):
     timezone = Column(String(50), default="UTC")
     language = Column(String(10), default="en")
     
-    # Metadata
-    metadata = Column(JSONB, default=dict)
+    # Extra data
+    extra_data = Column(JSONB, default=dict)
     
     # Soft delete
     deleted_at = Column(DateTime(timezone=True), nullable=True)
@@ -125,11 +125,6 @@ class User(Base, UUIDMixin, TimestampMixin):
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}')>"
-
-
-# Import Integer at module level (was missing)
-from sqlalchemy import Integer
-
 
 class UserOrganizationRole(Base, UUIDMixin, TimestampMixin):
     """
@@ -168,8 +163,8 @@ class UserOrganizationRole(Base, UUIDMixin, TimestampMixin):
     invited_at = Column(DateTime(timezone=True), nullable=True)
     joined_at = Column(DateTime(timezone=True), nullable=True)
     
-    # Metadata
-    metadata = Column(JSONB, default=dict)
+    # Extra data
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     user: Mapped["User"] = relationship(

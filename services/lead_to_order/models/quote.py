@@ -90,7 +90,7 @@ class Quote(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
     custom_fields = Column(JSONB, default=dict)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Soft delete
     deleted_at = Column(DateTime(timezone=True), nullable=True)

@@ -89,7 +89,7 @@ class Team(Base, UUIDMixin, TimestampMixin):
     # }
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Soft delete
     deleted_at = Column(DateTime(timezone=True), nullable=True)
@@ -165,7 +165,7 @@ class TeamMember(Base, UUIDMixin, TimestampMixin):
     added_by_id = Column(UUID(as_uuid=True), nullable=True)
     
     # Metadata
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Relationships
     team: Mapped["Team"] = relationship("Team", back_populates="members")

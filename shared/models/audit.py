@@ -68,7 +68,7 @@ class AuditLog(Base, UUIDMixin):
     request_id = Column(String(100), nullable=True)  # For tracing
     
     # Additional context
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     description = Column(Text, nullable=True)  # Human-readable description
     
     # Timestamp
@@ -171,7 +171,7 @@ class ActivityLog(Base, UUIDMixin):
     # Activity details
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
     
     # Visibility
     is_public = Column(String, default=True)  # Visible to all org members

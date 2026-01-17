@@ -18,6 +18,25 @@ class LoginRequest(BaseSchema):
     mfa_code: Optional[str] = None
 
 
+class RegisterRequest(BaseSchema):
+    """User registration request schema."""
+    
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    organization_name: str = Field(..., min_length=1, max_length=255)
+
+
+class RegisterResponse(BaseSchema):
+    """User registration response schema."""
+    
+    user_id: UUID
+    email: str
+    organization_id: UUID
+    message: str = "User registered successfully"
+
+
 class LoginResponse(BaseSchema):
     """Login response schema."""
     
