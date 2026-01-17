@@ -8,10 +8,11 @@ from sqlalchemy import select, update, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from shared.models.user import User, UserOrganizationRole
+from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.auth import RefreshToken, PasswordReset, EmailVerification
-from shared.models.role import Role, RolePermission, Permission
-from shared.security.password import verify_password
+from shared.models.role import Role, RolePermission, Permission, SystemRole
+from shared.models.organization import Organization, OrganizationStatus
+from shared.security.password import verify_password, hash_password
 from services.auth.config import auth_settings
 
 
@@ -20,6 +21,71 @@ class AuthService:
     
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    async def register_user(
+        self,
+        email: str,
+        password: str,
+        first_name: str,
+        last_name: str,
+        organization_name: str
+    ) -> tuple[User, Organization]:
+        """
+        Register a new user and create their organization.
+        
+        This is for first-time signup where a user creates a new account
+        and a new organization simultaneously.
+        """
+        # 1. Create User
+        user = User(
+            email=email.lower(),
+            password_hash=hash_password(password),
+            first_name=first_name,
+            last_name=last_name,
+            display_name=f"{first_name} {last_name}",
+            status=UserStatus.ACTIVE,  # Default to active for now, or PENDING if email verification required
+            email_verified=False
+        )
+        self.db.add(user)
+        await self.db.flush()
+
+        # 2. Create Organization
+        slug = organization_name.lower().replace(" ", "-")[:100]
+        # Ensure slug is unique (simple version)
+        count_query = select(Organization).where(Organization.slug == slug)
+        existing = await self.db.execute(count_query)
+        if existing.scalar_one_or_none():
+            slug = f"{slug}-{str(user.id)[:8]}"
+
+        organization = Organization(
+            name=organization_name,
+            slug=slug,
+            status=OrganizationStatus.ACTIVE,
+            owner_id=user.id
+        )
+        self.db.add(organization)
+        await self.db.flush()
+
+        # 3. Get Owner Role
+        role_query = select(Role).where(
+            Role.code == SystemRole.OWNER.value,
+            Role.is_system == True
+        )
+        role_result = await self.db.execute(role_query)
+        owner_role = role_result.scalar_one_or_none()
+
+        # 4. Link User to Organization as Owner
+        user_org_role = UserOrganizationRole(
+            user_id=user.id,
+            organization_id=organization.id,
+            role_id=owner_role.id if owner_role else None,
+            is_primary=True,
+            status="active"
+        )
+        self.db.add(user_org_role)
+        await self.db.flush()
+
+        return user, organization
     
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email address."""
