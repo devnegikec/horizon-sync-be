@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-horizon}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-horizon}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,7 +61,7 @@ services:
         condition: service_healthy
     networks:
       - horizon_network
-   # User Management Service
+  # User Management Service
   user-management-service:
     build:
       context: .
@@ -82,7 +82,28 @@ services:
     networks:
       - horizon_network
 
-   # API Gateway (NGINX)
+  # Inventory Service
+  inventory-service:
+    build:
+      context: .
+      dockerfile: services/inventory/Dockerfile
+    container_name: horizon_inventory
+    environment:
+      - SERVICE_NAME=inventory
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-horizon}:${POSTGRES_PASSWORD:-horizon_secret}@postgres:5432/${POSTGRES_DB:-horizon_erp}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-horizon_redis}@redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
+    ports:
+      - "8005:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - horizon_network
+
+  # API Gateway (NGINX)
   api-gateway:
     image: nginx:alpine
     container_name: horizon_gateway
@@ -100,6 +121,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
 
 networks:
   horizon_network:
