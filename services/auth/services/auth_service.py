@@ -8,7 +8,7 @@ from sqlalchemy import select, update, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from shared.models.user import User, UserRole, UserStatus
+from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.auth import RefreshToken, PasswordReset, EmailVerification
 from shared.models.role import Role, RolePermission, Permission, SystemRole
 from shared.models.organization import Organization, OrganizationStatus
@@ -69,7 +69,7 @@ class AuthService:
         await self.db.flush()
 
         # 4. Link User to Role
-        user_role = UserRole(
+        user_role = UserOrganizationRole(
             user_id=user.id,
             role_id=owner_role.id
         )
@@ -114,13 +114,13 @@ class AuthService:
         self,
         user_id: UUID,
         organization_id: Optional[UUID] = None
-    ) -> Optional[UserRole]:
+    ) -> Optional[UserOrganizationRole]:
         """Get user's organization and role context."""
-        query = select(UserRole).options(
-            selectinload(UserRole.user).selectinload(User.organization),
-            selectinload(UserRole.role)
+        query = select(UserOrganizationRole).options(
+            selectinload(UserOrganizationRole.user).selectinload(User.organization),
+            selectinload(UserOrganizationRole.role)
         ).join(User).where(
-            UserRole.user_id == user_id,
+            UserOrganizationRole.user_id == user_id,
             User.is_active == True
         )
         

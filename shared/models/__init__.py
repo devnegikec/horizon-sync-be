@@ -1,12 +1,17 @@
 """Database models exports."""
 from shared.models.organization import Organization
 from shared.models.subscription import Subscription, SubscriptionPlan, SubscriptionInvoice, SubscriptionPayment
-from shared.models.user import User, UserRole
-from shared.models.role import Role, Permission, RolePermission
+from shared.models.user import User, UserOrganizationRole, UserStatus, UserType
+from shared.models.role import Role, Permission, RolePermission, ActionType, ResourceType, SystemRole
 from shared.models.team import Team, UserTeam
 from shared.models.audit import AuditLog, ActivityLog
 from shared.models.auth import RefreshToken, PasswordReset, Invitation, EmailVerification
-from shared.models.accounting import ChartOfAccount, JournalEntry, JournalEntryLine
+from shared.models.billing_accounting import (
+    Customer, Supplier, Invoice, InvoiceItem, Payment, PaymentAllocation,
+    ChartOfAccounts, JournalEntry, JournalEntryLine,
+    CustomerStatus, SupplierStatus, InvoiceStatus, InvoiceType,
+    PaymentStatus, PaymentType, AccountType, JournalEntryStatus
+)
 
 __all__ = [
     # Organization
@@ -18,11 +23,16 @@ __all__ = [
     "SubscriptionPayment",
     # User
     "User",
-    "UserRole",
+    "UserOrganizationRole",
+    "UserStatus",
+    "UserType",
     # Role & Permission
     "Role",
     "Permission",
     "RolePermission",
+    "ActionType",
+    "ResourceType",
+    "SystemRole",
     # Team
     "Team",
     "UserTeam",
@@ -34,25 +44,22 @@ __all__ = [
     "PasswordReset",
     "Invitation",
     "EmailVerification",
-    # CRM
-    "Lead",
-    "Account",
-    "Contact",
-    "Deal",
-    "Ticket",
-    # Inventory
-    "ItemGroup",
-    "Item",
-    "Warehouse",
-    "Batch",
-    "StockLedgerEntry",
-    "SalesOrder",
-    "PurchaseOrder",
-    "PurchaseReceipt",
-    "DeliveryNote",
-    "DeliveryNoteItem",
-    # Accounting
-    "ChartOfAccount",
+    # Billing & Accounting
+    "Customer",
+    "Supplier",
+    "Invoice",
+    "InvoiceItem",
+    "Payment",
+    "PaymentAllocation",
+    "ChartOfAccounts",
     "JournalEntry",
     "JournalEntryLine",
+    "CustomerStatus",
+    "SupplierStatus",
+    "InvoiceStatus",
+    "InvoiceType",
+    "PaymentStatus",
+    "PaymentType",
+    "AccountType",
+    "JournalEntryStatus",
 ]

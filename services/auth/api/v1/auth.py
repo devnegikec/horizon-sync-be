@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from shared.config import settings
 from shared.database import get_async_session
-from shared.models.user import User, UserRole, UserStatus
+from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.auth import RefreshToken, PasswordReset
 from shared.models.role import Role
 from shared.schemas.auth import (

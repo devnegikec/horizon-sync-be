@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.database import get_async_session
 from shared.middleware.auth import get_current_user, get_current_user_context, require_permissions, CurrentUser
 from shared.middleware.tenant import require_tenant
-from shared.models.user import User, UserRole, UserStatus
+from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.auth import Invitation, InvitationStatus
 from shared.schemas.user import (
     UserCreate,

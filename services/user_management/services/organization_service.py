@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from shared.models.organization import Organization, OrganizationStatus, OrganizationType
 from shared.models.subscription import Subscription, SubscriptionPlan, SubscriptionStatus, PlanType
 from shared.models.role import Role, Permission, RolePermission
-from shared.models.user import User, UserRole
+from shared.models.user import User, UserOrganizationRole
 from shared.models.team import Team
 
 

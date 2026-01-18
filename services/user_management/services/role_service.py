@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from shared.models.role import Role, Permission, RolePermission
-from shared.models.user import User, UserRole
+from shared.models.user import User, UserOrganizationRole
 
 
 class RoleService:
@@ -161,8 +161,8 @@ class RoleService:
         organization_id: UUID
     ) -> int:
         """Get number of users with this role in the organization."""
-        query = select(func.count()).select_from(UserRole).join(User).where(
-            UserRole.role_id == role_id,
+        query = select(func.count()).select_from(UserOrganizationRole).join(User).where(
+            UserOrganizationRole.role_id == role_id,
             User.organization_id == organization_id,
             User.is_active == True
         )

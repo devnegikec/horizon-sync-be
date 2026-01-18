@@ -11,7 +11,7 @@ from shared.middleware.auth import get_current_user, require_permissions
 from shared.middleware.tenant import require_tenant
 from shared.models.organization import Organization, OrganizationStatus
 from shared.models.subscription import Subscription, SubscriptionStatus
-from shared.models.user import User, UserRole, UserStatus
+from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.role import Role
 from shared.schemas.organization import (
     OrganizationCreate,

@@ -33,6 +33,36 @@ class UserType(str, enum.Enum):
     SYSTEM = "system"
 
 
+class UserOrganizationRole(Base, UUIDMixin):
+    """
+    Maps users to roles within an organization.
+    """
+    __tablename__ = "user_organization_roles"
+    
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    role_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    
+    is_active = Column(Boolean, default=True, nullable=False)
+    status = Column(String(50), nullable=True, default="active")
+    
+    # Relationships
+    user: Mapped["User"] = relationship("User", back_populates="user_roles")
+    role: Mapped["Role"] = relationship("Role")
+    
+    def __repr__(self):
+        return f"<UserOrganizationRole(user={self.user_id}, role={self.role_id})>"
+
+
 class User(Base, UUIDMixin, TimestampMixin):
     """
     User model - represents a person in the system.
@@ -78,8 +108,8 @@ class User(Base, UUIDMixin, TimestampMixin):
         "Organization",
         back_populates="users"
     )
-    user_roles: Mapped[List["UserRole"]] = relationship(
-        "UserRole",
+    user_roles: Mapped[List["UserOrganizationRole"]] = relationship(
+        "UserOrganizationRole",
         back_populates="user",
         cascade="all, delete-orphan"
     )
@@ -98,34 +128,3 @@ class User(Base, UUIDMixin, TimestampMixin):
         if self.locked_until and self.locked_until > datetime.utcnow():
             return True
         return False
-
-
-class UserRole(Base, UUIDMixin):
-    """
-    Maps users to roles.
-    """
-    __tablename__ = "user_roles"
-    
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-    role_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("roles.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-    
-    is_active = Column(Boolean, default=True, nullable=False)
-    status = Column(String(50), nullable=True, default="active")
-    
-    # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="user_roles")
-    role: Mapped["Role"] = relationship("Role")
-    
-    def __repr__(self):
-        return f"<UserRole(user={self.user_id}, role={self.role_id})>"
-

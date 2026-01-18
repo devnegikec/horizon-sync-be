@@ -7,7 +7,7 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from shared.models.user import User, UserRole, UserStatus
+from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.organization import Organization
 from shared.models.role import Role
 from shared.models.auth import Invitation, InvitationStatus
@@ -77,7 +77,7 @@ class UserService:
         user_id: UUID,
         organization_id: UUID,
         role_id: Optional[UUID] = None,
-    ) -> UserRole:
+    ) -> UserOrganizationRole:
         """Add user to an organization with a role."""
         # Since user belongs to one organization, update the user record
         user = await self.get_user_by_id(user_id)
@@ -85,7 +85,7 @@ class UserService:
             user.organization_id = organization_id
             await self.db.flush()
 
-        user_role = UserRole(
+        user_role = UserOrganizationRole(
             user_id=user_id,
             role_id=role_id
         )
@@ -99,12 +99,12 @@ class UserService:
         self,
         user_id: UUID,
         organization_id: UUID
-    ) -> Optional[UserRole]:
+    ) -> Optional[UserOrganizationRole]:
         """Get user's role in an organization."""
-        query = select(UserRole).options(
-            selectinload(UserRole.role)
+        query = select(UserOrganizationRole).options(
+            selectinload(UserOrganizationRole.role)
         ).join(User).where(
-            UserRole.user_id == user_id,
+            UserOrganizationRole.user_id == user_id,
             User.organization_id == organization_id
         )
         result = await self.db.execute(query)
@@ -114,7 +114,7 @@ class UserService:
         """Get all organizations a user belongs to (currently only one)."""
         query = select(User).options(
             selectinload(User.organization),
-            selectinload(User.user_roles).selectinload(UserRole.role)
+            selectinload(User.user_roles).selectinload(UserOrganizationRole.role)
         ).where(
             User.id == user_id,
             User.is_active == True
@@ -192,7 +192,7 @@ class UserService:
             if filters.status:
                 query = query.where(User.status == filters.status)
             if filters.role_id:
-                query = query.join(UserRole).where(UserRole.role_id == filters.role_id)
+                query = query.join(UserOrganizationRole).where(UserOrganizationRole.role_id == filters.role_id)
             if filters.is_active is not None:
                 query = query.where(User.is_active == filters.is_active)
         

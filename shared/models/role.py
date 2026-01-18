@@ -13,6 +13,41 @@ if TYPE_CHECKING:
     from shared.models.organization import Organization
 
 
+class ActionType(str, enum.Enum):
+    """Types of actions that can be performed on resources."""
+    ALL = "*"
+    CREATE = "create"
+    READ = "read"
+    UPDATE = "update"
+    DELETE = "delete"
+    LIST = "list"
+    MANAGE = "manage"
+    APPROVE = "approve"
+    REJECT = "reject"
+
+
+class ResourceType(str, enum.Enum):
+    """Types of resources in the system."""
+    ALL = "*"
+    USER = "user"
+    ROLE = "role"
+    TEAM = "team"
+    ORGANIZATION = "organization"
+    SUBSCRIPTION = "subscription"
+    INVOICE = "invoice"
+    PAYMENT = "payment"
+    CUSTOMER = "customer"
+    SUPPLIER = "supplier"
+    LEDGER = "ledger"
+    ITEM = "item"
+    WAREHOUSE = "warehouse"
+    STOCK = "stock"
+    LEAD = "lead"
+    CONTACT = "contact"
+    DEAL = "deal"
+    TICKET = "ticket"
+
+
 class SystemRole(str, enum.Enum):
     """System-defined roles that exist in every organization."""
     OWNER = "owner"
@@ -105,4 +140,3 @@ class RolePermission(Base, UUIDMixin):
     
     def __repr__(self):
         return f"<RolePermission(role={self.role_id}, permission={self.permission_id})>"
-
