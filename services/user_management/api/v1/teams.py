@@ -8,16 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.database import get_async_session
 from shared.middleware.auth import get_current_user, require_permissions
 from shared.middleware.tenant import require_tenant
-from shared.models.team import Team, TeamMember, TeamRole, TeamType
+from shared.models.team import Team, UserTeam, TeamRole, TeamType
 from shared.schemas.team import (
     TeamCreate,
     TeamUpdate,
     TeamResponse,
     TeamDetailResponse,
-    TeamMemberAdd,
-    TeamMemberBulkAdd,
-    TeamMemberUpdate,
-    TeamMemberResponse,
+    UserTeamAdd,
+    UserTeamBulkAdd,
+    UserTeamUpdate,
+    UserTeamResponse,
     TeamListFilter,
     TeamHierarchy,
     TeamStats,
@@ -187,10 +187,10 @@ async def delete_team(
     return SuccessResponse(message="Team deleted successfully")
 
 
-@router.post("/{team_id}/members", response_model=TeamMemberResponse)
+@router.post("/{team_id}/members", response_model=UserTeamResponse)
 async def add_team_member(
     team_id: UUID,
-    member_data: TeamMemberAdd,
+    member_data: UserTeamAdd,
     current_user: TokenPayload = Depends(require_permissions("team:update")),
     tenant_id: UUID = Depends(require_tenant),
     db: AsyncSession = Depends(get_async_session)
@@ -223,13 +223,13 @@ async def add_team_member(
     
     await db.commit()
     
-    return TeamMemberResponse.model_validate(member)
+    return UserTeamResponse.model_validate(member)
 
 
 @router.post("/{team_id}/members/bulk", response_model=SuccessResponse)
 async def add_team_members_bulk(
     team_id: UUID,
-    members_data: TeamMemberBulkAdd,
+    members_data: UserTeamBulkAdd,
     current_user: TokenPayload = Depends(require_permissions("team:update")),
     tenant_id: UUID = Depends(require_tenant),
     db: AsyncSession = Depends(get_async_session)
@@ -294,11 +294,11 @@ async def remove_team_member(
     return SuccessResponse(message="Member removed from team")
 
 
-@router.patch("/{team_id}/members/{user_id}", response_model=TeamMemberResponse)
+@router.patch("/{team_id}/members/{user_id}", response_model=UserTeamResponse)
 async def update_team_member(
     team_id: UUID,
     user_id: UUID,
-    update_data: TeamMemberUpdate,
+    update_data: UserTeamUpdate,
     current_user: TokenPayload = Depends(require_permissions("team:update")),
     tenant_id: UUID = Depends(require_tenant),
     db: AsyncSession = Depends(get_async_session)
@@ -327,7 +327,7 @@ async def update_team_member(
     
     await db.commit()
     
-    return TeamMemberResponse.model_validate(updated_member)
+    return UserTeamResponse.model_validate(updated_member)
 
 
 @router.get("/{team_id}/stats", response_model=TeamStats)

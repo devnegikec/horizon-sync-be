@@ -60,39 +60,39 @@ class TeamResponse(TeamBase):
 class TeamDetailResponse(TeamResponse):
     """Detailed team response with members."""
     
-    members: List["TeamMemberResponse"]
+    user_teams: List["UserTeamResponse"]
     children: List["TeamResponse"] = []
     settings: Dict[str, Any] = {}
 
 
-class TeamMemberBase(BaseSchema):
-    """Base team member schema."""
+class UserTeamBase(BaseSchema):
+    """Base user team schema."""
     
     user_id: UUID
     role: TeamRole = TeamRole.MEMBER
 
 
-class TeamMemberAdd(TeamMemberBase):
-    """Schema for adding a team member."""
+class UserTeamAdd(UserTeamBase):
+    """Schema for adding a user to a team."""
     pass
 
 
-class TeamMemberBulkAdd(BaseSchema):
-    """Schema for bulk adding team members."""
+class UserTeamBulkAdd(BaseSchema):
+    """Schema for bulk adding users to a team."""
     
     user_ids: List[UUID]
     role: TeamRole = TeamRole.MEMBER
 
 
-class TeamMemberUpdate(BaseSchema):
-    """Schema for updating a team member."""
+class UserTeamUpdate(BaseSchema):
+    """Schema for updating a user team membership."""
     
     role: Optional[TeamRole] = None
     is_active: Optional[bool] = None
 
 
-class TeamMemberResponse(BaseSchema):
-    """Schema for team member response."""
+class UserTeamResponse(BaseSchema):
+    """Schema for user team response."""
     
     id: UUID
     team_id: UUID

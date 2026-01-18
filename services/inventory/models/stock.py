@@ -43,3 +43,16 @@ class StockMovement(Base, UUIDMixin, TimestampMixin, TenantMixin):
     notes = Column(Text, nullable=True)
     performed_by = Column(UUID(as_uuid=True), nullable=True)
     performed_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+class StockLedgerEntry(Base, UUIDMixin, TimestampMixin, TenantMixin):
+    """Detailed stock ledger for all transactions."""
+    __tablename__ = "stock_ledger_entries"
+    
+    item_id = Column(UUID(as_uuid=True), ForeignKey("items.id", ondelete="CASCADE"), nullable=False, index=True)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id", ondelete="CASCADE"), nullable=False, index=True)
+    batch_id = Column(UUID(as_uuid=True), ForeignKey("batches.id", ondelete="SET NULL"), nullable=True)
+    
+    voucher_type = Column(String(50), nullable=True)
+    voucher_id = Column(UUID(as_uuid=True), nullable=True)
+    qty = Column(Numeric(15, 4), nullable=True)
+    valuation_rate = Column(Numeric(15, 4), nullable=True)

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from shared.models.role import ActionType, ResourceType
+
 
 
 class PermissionChecker:
@@ -71,39 +71,19 @@ class PermissionChecker:
         """
         return all(self.has(p) for p in permissions)
     
-    def can(self, resource: ResourceType, action: ActionType) -> bool:
+    def can(self, resource: str, action: str) -> bool:
         """
         Check if user can perform an action on a resource.
         
         Args:
-            resource: Resource type
-            action: Action type
+            resource: Resource type (string)
+            action: Action type (string)
         
         Returns:
             True if user can perform the action
         """
-        permission = f"{resource.value}:{action.value}"
+        permission = f"{resource}:{action}"
         return self.has(permission)
-    
-    def can_create(self, resource: ResourceType) -> bool:
-        """Check if user can create a resource."""
-        return self.can(resource, ActionType.CREATE)
-    
-    def can_read(self, resource: ResourceType) -> bool:
-        """Check if user can read a resource."""
-        return self.can(resource, ActionType.READ)
-    
-    def can_update(self, resource: ResourceType) -> bool:
-        """Check if user can update a resource."""
-        return self.can(resource, ActionType.UPDATE)
-    
-    def can_delete(self, resource: ResourceType) -> bool:
-        """Check if user can delete a resource."""
-        return self.can(resource, ActionType.DELETE)
-    
-    def can_list(self, resource: ResourceType) -> bool:
-        """Check if user can list resources."""
-        return self.can(resource, ActionType.LIST)
 
 
 def check_permission(
@@ -188,30 +168,27 @@ def require_permission(permission: str):
     return decorator
 
 
-def build_permission_code(resource: ResourceType, action: ActionType) -> str:
+def build_permission_code(resource: str, action: str) -> str:
     """
-    Build a permission code from resource and action.
-    
-    Args:
-        resource: Resource type
-        action: Action type
-    
-    Returns:
-        Permission code string (e.g., 'lead:create')
+    Build a permission code from resource and action strings.
     """
-    return f"{resource.value}:{action.value}"
+    return f"{resource}:{action}"
 
 
 def get_all_permissions() -> List[str]:
     """
-    Generate all possible permission codes.
-    
-    Returns:
-        List of all permission codes
+    Generate common permission codes.
     """
+    resources = [
+        "organization", "user", "role", "team", "lead", "contact",
+        "deal", "ticket", "product", "inventory", "warehouse",
+        "report", "setting", "subscription", "audit_log"
+    ]
+    actions = ["create", "read", "update", "delete", "list"]
+    
     permissions = []
-    for resource in ResourceType:
-        for action in ActionType:
+    for resource in resources:
+        for action in actions:
             permissions.append(build_permission_code(resource, action))
     return permissions
 

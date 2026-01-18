@@ -11,7 +11,7 @@ from shared.models.subscription import (
     Subscription, SubscriptionPlan, SubscriptionStatus,
     SubscriptionUsage, BillingCycle, PlanType
 )
-from shared.models.user import UserOrganizationRole
+from shared.models.user import User
 from shared.models.team import Team
 
 
@@ -55,8 +55,8 @@ class SubscriptionService:
         ).where(
             Subscription.organization_id == organization_id,
             Subscription.status.in_([
-                SubscriptionStatus.ACTIVE,
-                SubscriptionStatus.TRIAL
+                SubscriptionStatus.ACTIVE.value,
+                SubscriptionStatus.TRIAL.value
             ])
         ).order_by(Subscription.created_at.desc())
         
@@ -91,9 +91,9 @@ class SubscriptionService:
                     "percentage": round(team_count / plan.max_teams * 100, 1) if plan.max_teams > 0 else 0,
                 },
                 "storage": {
-                    "current_mb": subscription.current_storage_mb or 0,
+                    "current_mb": float(subscription.current_storage_mb or 0),
                     "limit_gb": plan.max_storage_gb,
-                    "percentage": round((subscription.current_storage_mb or 0) / (plan.max_storage_gb * 1024) * 100, 1) if plan.max_storage_gb > 0 else 0,
+                    "percentage": round(float(subscription.current_storage_mb or 0) / (plan.max_storage_gb * 1024) * 100, 1) if plan.max_storage_gb > 0 else 0,
                 },
             },
             "limits": {
@@ -109,9 +109,9 @@ class SubscriptionService:
     
     async def _count_users(self, organization_id: UUID) -> int:
         """Count active users in organization."""
-        query = select(func.count()).select_from(UserOrganizationRole).where(
-            UserOrganizationRole.organization_id == organization_id,
-            UserOrganizationRole.is_active == True
+        query = select(func.count()).select_from(User).where(
+            User.organization_id == organization_id,
+            User.is_active == True
         )
         result = await self.db.execute(query)
         return result.scalar() or 0
@@ -119,9 +119,7 @@ class SubscriptionService:
     async def _count_teams(self, organization_id: UUID) -> int:
         """Count active teams in organization."""
         query = select(func.count()).select_from(Team).where(
-            Team.organization_id == organization_id,
-            Team.is_active == True,
-            Team.deleted_at.is_(None)
+            Team.organization_id == organization_id
         )
         result = await self.db.execute(query)
         return result.scalar() or 0

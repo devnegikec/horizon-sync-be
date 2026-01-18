@@ -1,14 +1,12 @@
 """Inventory models."""
 from services.inventory.models.product import Product, ProductCategory, ProductStatus
-from services.inventory.models.warehouse import Warehouse
+from services.inventory.models.warehouse import (
+    Warehouse, WarehouseType, PutAwayRule, PickList, PickListItem
+)
 from services.inventory.models.stock import StockLevel, StockMovement, MovementType
 from services.inventory.models.item import (
     Item, ItemGroup, ItemPrice, ItemSupplier,
     ValuationMethod, ItemType, ItemStatus
-)
-from services.inventory.models.warehouse_extended import (
-    WarehouseExtended, WarehouseType, PutAwayRule,
-    PickList, PickListItem
 )
 from services.inventory.models.stock_entry import (
     StockEntry, StockEntryItem, StockEntryType, StockEntryStatus,
@@ -40,7 +38,7 @@ __all__ = [
     "ValuationMethod", "ItemType", "ItemStatus",
     
     # Warehouse models
-    "WarehouseExtended", "WarehouseType", "PutAwayRule",
+    "Warehouse", "WarehouseType", "PutAwayRule",
     "PickList", "PickListItem",
     
     # Stock entry models

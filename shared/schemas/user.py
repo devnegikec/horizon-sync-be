@@ -147,7 +147,7 @@ class UserMe(BaseSchema):
     organizations: List[Dict[str, Any]] = []
 
 
-class UserOrganizationRoleUpdate(BaseSchema):
+class UserRoleUpdate(BaseSchema):
     """Schema for updating user's role in organization."""
     
     role_id: UUID

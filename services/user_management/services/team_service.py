@@ -7,7 +7,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from shared.models.team import Team, TeamMember, TeamRole, TeamType
+from shared.models.team import Team, UserTeam, TeamRole, TeamType
 from shared.schemas.team import TeamHierarchy, TeamStats
 
 
@@ -81,7 +81,7 @@ class TeamService:
     ) -> Optional[Team]:
         """Get team with members loaded."""
         query = select(Team).options(
-            selectinload(Team.members).selectinload(TeamMember.user)
+            selectinload(Team.user_teams).selectinload(UserTeam.user)
         ).where(
             Team.id == team_id,
             Team.organization_id == organization_id,
@@ -150,12 +150,12 @@ class TeamService:
         user_id: UUID,
         role: TeamRole = TeamRole.MEMBER,
         added_by_id: Optional[UUID] = None,
-    ) -> TeamMember:
+    ) -> UserTeam:
         """Add a member to a team."""
-        member = TeamMember(
+        member = UserTeam(
             team_id=team_id,
             user_id=user_id,
-            role=role,
+            team_role=role,
             is_active=True,
             joined_at=datetime.utcnow(),
             added_by_id=added_by_id,
@@ -170,17 +170,17 @@ class TeamService:
         self,
         team_id: UUID,
         user_id: UUID
-    ) -> Optional[TeamMember]:
+    ) -> Optional[UserTeam]:
         """Get team member."""
-        query = select(TeamMember).where(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == user_id
+        query = select(UserTeam).where(
+            UserTeam.team_id == team_id,
+            UserTeam.user_id == user_id
         )
         
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
-    async def remove_member(self, member: TeamMember) -> None:
+    async def remove_member(self, member: UserTeam) -> None:
         """Remove a team member."""
         member.is_active = False
         member.left_at = datetime.utcnow()
@@ -188,9 +188,9 @@ class TeamService:
     
     async def update_member(
         self,
-        member: TeamMember,
+        member: UserTeam,
         data: Dict[str, Any]
-    ) -> TeamMember:
+    ) -> UserTeam:
         """Update team member."""
         for key, value in data.items():
             if hasattr(member, key) and value is not None:
@@ -232,28 +232,28 @@ class TeamService:
             id=team.id,
             name=team.name,
             team_type=team.team_type,
-            member_count=len([m for m in (team.members or []) if m.is_active]),
+            member_count=len([m for m in (team.user_teams or []) if m.is_active]),
             children=children,
         )
     
     async def get_team_stats(self, team_id: UUID) -> TeamStats:
         """Get team statistics."""
         # Count members
-        member_query = select(func.count()).select_from(TeamMember).where(
-            TeamMember.team_id == team_id
+        member_query = select(func.count()).select_from(UserTeam).where(
+            UserTeam.team_id == team_id
         )
         total_members = (await self.db.execute(member_query)).scalar() or 0
         
-        active_query = select(func.count()).select_from(TeamMember).where(
-            TeamMember.team_id == team_id,
-            TeamMember.is_active == True
+        active_query = select(func.count()).select_from(UserTeam).where(
+            UserTeam.team_id == team_id,
+            UserTeam.is_active == True
         )
         active_members = (await self.db.execute(active_query)).scalar() or 0
         
-        leader_query = select(func.count()).select_from(TeamMember).where(
-            TeamMember.team_id == team_id,
-            TeamMember.role == TeamRole.LEADER,
-            TeamMember.is_active == True
+        leader_query = select(func.count()).select_from(UserTeam).where(
+            UserTeam.team_id == team_id,
+            UserTeam.team_role == TeamRole.LEADER,
+            UserTeam.is_active == True
         )
         leaders = (await self.db.execute(leader_query)).scalar() or 0
         
