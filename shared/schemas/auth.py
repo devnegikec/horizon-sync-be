@@ -13,7 +13,6 @@ class LoginRequest(BaseSchema):
     
     email: EmailStr
     password: str = Field(..., min_length=1)
-    organization_id: Optional[UUID] = None  # For users in multiple orgs
     remember_me: bool = False
     mfa_code: Optional[str] = None
 
