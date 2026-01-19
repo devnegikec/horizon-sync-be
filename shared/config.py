@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     
     # Security
     PASSWORD_HASH_ROUNDS: int = 12
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    CORS_ORIGINS: List[str] = ["*"]
     RATE_LIMIT_PER_MINUTE: int = 60
     
     # Email
