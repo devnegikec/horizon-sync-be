@@ -157,7 +157,7 @@ async def login(
             )
     
     # Get organization context
-    org_id = login_data.organization_id
+    org_id = None
     role_code = None
     permissions = []
     org_name = None
