@@ -36,53 +36,44 @@ class AuthService:
         This is for first-time signup where a user creates a new account
         and a new organization simultaneously.
         """
-        # 1. Create User
+        # 1. Create Organization
+        organization = Organization(
+            name=organization_name,
+        )
+        self.db.add(organization)
+        await self.db.flush()
+
+        # 2. Create User
         user = User(
+            organization_id=organization.id,
             email=email.lower(),
             password_hash=hash_password(password),
             first_name=first_name,
             last_name=last_name,
             display_name=f"{first_name} {last_name}",
-            status=UserStatus.ACTIVE,  # Default to active for now, or PENDING if email verification required
+            status=UserStatus.ACTIVE.value,
             email_verified=False
         )
         self.db.add(user)
         await self.db.flush()
 
-        # 2. Create Organization
-        slug = organization_name.lower().replace(" ", "-")[:100]
-        # Ensure slug is unique (simple version)
-        count_query = select(Organization).where(Organization.slug == slug)
-        existing = await self.db.execute(count_query)
-        if existing.scalar_one_or_none():
-            slug = f"{slug}-{str(user.id)[:8]}"
-
-        organization = Organization(
-            name=organization_name,
-            slug=slug,
-            status=OrganizationStatus.ACTIVE,
-            owner_id=user.id
+        # 3. Create/Get Owner Role for this organization
+        # In a real system, we might have a template of roles to create for each new org
+        owner_role = Role(
+            organization_id=organization.id,
+            name="Owner",
+            code=SystemRole.OWNER.value,
+            is_active=True
         )
-        self.db.add(organization)
+        self.db.add(owner_role)
         await self.db.flush()
 
-        # 3. Get Owner Role
-        role_query = select(Role).where(
-            Role.code == SystemRole.OWNER.value,
-            Role.is_system == True
-        )
-        role_result = await self.db.execute(role_query)
-        owner_role = role_result.scalar_one_or_none()
-
-        # 4. Link User to Organization as Owner
-        user_org_role = UserOrganizationRole(
+        # 4. Link User to Role
+        user_role = UserOrganizationRole(
             user_id=user.id,
-            organization_id=organization.id,
-            role_id=owner_role.id if owner_role else None,
-            is_primary=True,
-            status="active"
+            role_id=owner_role.id
         )
-        self.db.add(user_org_role)
+        self.db.add(user_role)
         await self.db.flush()
 
         return user, organization
@@ -126,21 +117,15 @@ class AuthService:
     ) -> Optional[UserOrganizationRole]:
         """Get user's organization and role context."""
         query = select(UserOrganizationRole).options(
-            selectinload(UserOrganizationRole.organization),
+            selectinload(UserOrganizationRole.user).selectinload(User.organization),
             selectinload(UserOrganizationRole.role)
-        ).where(
+        ).join(User).where(
             UserOrganizationRole.user_id == user_id,
-            UserOrganizationRole.is_active == True
+            User.is_active == True
         )
         
         if organization_id:
-            query = query.where(UserOrganizationRole.organization_id == organization_id)
-        else:
-            # Get primary org first, or any active org
-            query = query.order_by(
-                UserOrganizationRole.is_primary.desc(),
-                UserOrganizationRole.joined_at.asc()
-            )
+            query = query.where(User.organization_id == organization_id)
         
         result = await self.db.execute(query)
         return result.scalars().first()
@@ -151,12 +136,11 @@ class AuthService:
             RolePermission,
             RolePermission.permission_id == Permission.id
         ).where(
-            RolePermission.role_id == role_id,
-            Permission.is_active == True
+            RolePermission.role_id == role_id
         )
         
         result = await self.db.execute(query)
-        return [row[0] for row in result.all()]
+        return [row for row in result.scalars().all()]
     
     async def store_refresh_token(
         self,
@@ -195,7 +179,7 @@ class AuthService:
             device_name = device_info[:100]  # Truncate
         
         refresh_token = RefreshToken(
-            id=token_id,
+            id=UUID(token_id) if isinstance(token_id, str) else token_id,
             user_id=user_id,
             token_hash=token_hash,
             token_family=token_family,
@@ -235,14 +219,16 @@ class AuthService:
     
     async def get_refresh_token(self, token_id: str) -> Optional[RefreshToken]:
         """Get refresh token by ID."""
-        query = select(RefreshToken).where(RefreshToken.id == token_id)
+        tid = UUID(token_id) if isinstance(token_id, str) else token_id
+        query = select(RefreshToken).where(RefreshToken.id == tid)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
     async def revoke_token(self, token_id: str) -> None:
         """Revoke a specific refresh token."""
+        tid = UUID(token_id) if isinstance(token_id, str) else token_id
         query = update(RefreshToken).where(
-            RefreshToken.id == token_id
+            RefreshToken.id == tid
         ).values(
             revoked_at=datetime.utcnow(),
             revoked_reason="manual"

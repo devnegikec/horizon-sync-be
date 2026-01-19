@@ -19,7 +19,7 @@ from shared.schemas.user import (
     UserInviteResponse,
     UserAcceptInvitation,
     UserMe,
-    UserOrganizationRoleUpdate,
+    UserRoleUpdate,
     UserListFilter,
 )
 from shared.schemas.common import SuccessResponse, PaginatedResponse, PaginationParams
@@ -356,7 +356,7 @@ async def deactivate_user(
 @router.put("/{user_id}/roles", response_model=SuccessResponse)
 async def update_user_role(
     user_id: UUID,
-    role_data: UserOrganizationRoleUpdate,
+    role_data: UserRoleUpdate,
     current_user: TokenPayload = Depends(require_permissions("user:update", "role:assign")),
     tenant_id: UUID = Depends(require_tenant),
     db: AsyncSession = Depends(get_async_session)

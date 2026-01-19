@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from shared.models.role import Role, Permission, RolePermission
-from shared.models.user import UserOrganizationRole
+from shared.models.user import User, UserOrganizationRole
 
 
 class RoleService:
@@ -23,12 +23,13 @@ class RoleService:
         is_active: Optional[bool] = None,
     ) -> List[Role]:
         """List roles for an organization."""
-        # System roles (org_id is null) and custom roles for this org
+        # Custom roles for this org
         conditions = [
             Role.organization_id == organization_id
         ]
         
         if include_system:
+            # Join with system roles
             conditions = [
                 (Role.organization_id == organization_id) |
                 (Role.is_system == True)
@@ -160,10 +161,10 @@ class RoleService:
         organization_id: UUID
     ) -> int:
         """Get number of users with this role in the organization."""
-        query = select(func.count()).select_from(UserOrganizationRole).where(
+        query = select(func.count()).select_from(UserOrganizationRole).join(User).where(
             UserOrganizationRole.role_id == role_id,
-            UserOrganizationRole.organization_id == organization_id,
-            UserOrganizationRole.is_active == True
+            User.organization_id == organization_id,
+            User.is_active == True
         )
         
         result = await self.db.execute(query)

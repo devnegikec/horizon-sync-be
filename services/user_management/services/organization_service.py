@@ -7,16 +7,11 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from shared.models.organization import Organization, OrganizationStatus, OrganizationType, OrganizationSettings
+from shared.models.organization import Organization, OrganizationStatus, OrganizationType
 from shared.models.subscription import Subscription, SubscriptionPlan, SubscriptionStatus, PlanType
 from shared.models.role import Role, Permission, RolePermission
-from shared.models.user import UserOrganizationRole
+from shared.models.user import User, UserOrganizationRole
 from shared.models.team import Team
-from shared.schemas.organization import OrganizationStats
-from shared.security.permissions import (
-    OWNER_PERMISSIONS, ADMIN_PERMISSIONS, MANAGER_PERMISSIONS,
-    MEMBER_PERMISSIONS, VIEWER_PERMISSIONS
-)
 
 
 class OrganizationService:
@@ -28,8 +23,7 @@ class OrganizationService:
     async def get_organization(self, org_id: UUID) -> Optional[Organization]:
         """Get organization by ID."""
         query = select(Organization).where(
-            Organization.id == org_id,
-            Organization.deleted_at.is_(None)
+            Organization.id == org_id
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -37,8 +31,7 @@ class OrganizationService:
     async def get_organization_by_slug(self, slug: str) -> Optional[Organization]:
         """Get organization by slug."""
         query = select(Organization).where(
-            Organization.slug == slug,
-            Organization.deleted_at.is_(None)
+            Organization.slug == slug
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -55,25 +48,12 @@ class OrganizationService:
         organization = Organization(
             name=name,
             slug=slug,
-            organization_type=organization_type,
-            industry=industry,
-            status=OrganizationStatus.PENDING,
-            settings={},
+            status=OrganizationStatus.PENDING.value,
             **kwargs
         )
         
         self.db.add(organization)
         await self.db.flush()
-        
-        # Create default settings
-        settings = OrganizationSettings(
-            organization_id=organization.id,
-            timezone="UTC",
-            date_format="YYYY-MM-DD",
-            currency="USD",
-            language="en",
-        )
-        self.db.add(settings)
         
         return organization
     
@@ -112,9 +92,7 @@ class OrganizationService:
         subscription = Subscription(
             organization_id=organization_id,
             plan_id=plan.id if plan else None,
-            status=SubscriptionStatus.TRIAL if plan and plan.trial_days > 0 else SubscriptionStatus.ACTIVE,
-            trial_starts_at=now if plan and plan.trial_days > 0 else None,
-            trial_ends_at=now + timedelta(days=plan.trial_days) if plan and plan.trial_days > 0 else None,
+            status=SubscriptionStatus.ACTIVE.value,
             starts_at=now,
         )
         
@@ -172,12 +150,11 @@ class OrganizationService:
             RolePermission,
             RolePermission.permission_id == Permission.id
         ).where(
-            RolePermission.role_id == role_id,
-            Permission.is_active == True
+            RolePermission.role_id == role_id
         )
         
         result = await self.db.execute(query)
-        return [row[0] for row in result.all()]
+        return [row for row in result.scalars().all()]
     
     async def get_organization_stats(self, org_id: UUID) -> Optional[OrganizationStats]:
         """Get organization statistics."""
@@ -187,21 +164,20 @@ class OrganizationService:
             return None
         
         # Count users
-        user_query = select(func.count()).select_from(UserOrganizationRole).where(
-            UserOrganizationRole.organization_id == org_id
+        user_query = select(func.count()).select_from(User).where(
+            User.organization_id == org_id
         )
         total_users = (await self.db.execute(user_query)).scalar() or 0
         
-        active_user_query = select(func.count()).select_from(UserOrganizationRole).where(
-            UserOrganizationRole.organization_id == org_id,
-            UserOrganizationRole.is_active == True
+        active_user_query = select(func.count()).select_from(User).where(
+            User.organization_id == org_id,
+            User.is_active == True
         )
         active_users = (await self.db.execute(active_user_query)).scalar() or 0
         
         # Count teams
         team_query = select(func.count()).select_from(Team).where(
-            Team.organization_id == org_id,
-            Team.deleted_at.is_(None)
+            Team.organization_id == org_id
         )
         total_teams = (await self.db.execute(team_query)).scalar() or 0
         
@@ -210,7 +186,7 @@ class OrganizationService:
             selectinload(Subscription.plan)
         ).where(
             Subscription.organization_id == org_id,
-            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
+            Subscription.status.in_([SubscriptionStatus.ACTIVE.value, SubscriptionStatus.TRIAL.value])
         )
         sub_result = await self.db.execute(sub_query)
         subscription = sub_result.scalar_one_or_none()
@@ -235,11 +211,11 @@ class OrganizationService:
             total_users=total_users,
             active_users=active_users,
             total_teams=total_teams,
-            total_leads=0,  # Would query from Lead-to-Order service
+            total_leads=0,
             total_contacts=0,
             total_deals=0,
-            total_tickets=0,  # Would query from Support service
-            storage_used_mb=subscription.current_storage_mb if subscription else 0,
+            total_tickets=0,
+            storage_used_mb=0,
             plan_name=plan_name,
             plan_limits=plan_limits,
             usage_percentage=usage_percentage,
@@ -251,18 +227,9 @@ class OrganizationService:
         data: Dict[str, Any]
     ) -> None:
         """Update organization settings."""
-        query = select(OrganizationSettings).where(
-            OrganizationSettings.organization_id == org_id
-        )
-        result = await self.db.execute(query)
-        settings = result.scalar_one_or_none()
-        
-        if not settings:
-            settings = OrganizationSettings(organization_id=org_id)
-            self.db.add(settings)
-        
-        for key, value in data.items():
-            if hasattr(settings, key) and value is not None:
-                setattr(settings, key, value)
-        
-        await self.db.flush()
+        org = await self.get_organization(org_id)
+        if org:
+            if org.settings is None:
+                org.settings = {}
+            org.settings.update(data)
+            await self.db.flush()

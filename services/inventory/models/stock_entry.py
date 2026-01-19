@@ -30,8 +30,8 @@ class StockEntry(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
     stock_entry_type = Column(Enum(StockEntryType), nullable=False)
     
     # Warehouses
-    from_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=True)
-    to_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=True)
+    from_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
+    to_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
     
     # Dates
     posting_date = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -70,8 +70,8 @@ class StockEntryItem(Base, UUIDMixin, TimestampMixin, TenantMixin):
     item_id = Column(UUID(as_uuid=True), ForeignKey("items.id"), nullable=False)
     
     # Warehouses (can override header)
-    source_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=True)
-    target_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=True)
+    source_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
+    target_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
     
     # Quantity
     qty = Column(Numeric(15, 3), nullable=False)
@@ -126,7 +126,7 @@ class StockReconciliationItem(Base, UUIDMixin, TimestampMixin, TenantMixin):
     reconciliation_id = Column(UUID(as_uuid=True), ForeignKey("stock_reconciliations.id"), nullable=False, index=True)
     
     item_id = Column(UUID(as_uuid=True), ForeignKey("items.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
     
     # Quantities
     current_qty = Column(Numeric(15, 3), default=0)

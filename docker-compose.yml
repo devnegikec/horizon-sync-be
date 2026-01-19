@@ -54,6 +54,10 @@ services:
       - DEBUG=true
     ports:
       - "8001:8000"
+    volumes:
+      - ./shared:/app/shared
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +78,10 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
     ports:
       - "8002:8000"
+    volumes:
+      - ./shared:/app/shared
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini
     depends_on:
       postgres:
         condition: service_healthy

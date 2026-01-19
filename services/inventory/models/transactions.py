@@ -14,6 +14,24 @@ class DocumentStatus(str, enum.Enum):
     CANCELLED = "cancelled"
     RETURNED = "returned"
 
+class SalesOrder(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
+    """Sales Order for customer orders."""
+    __tablename__ = "sales_orders"
+    
+    sales_order_no = Column(String(100), nullable=False, unique=True, index=True)
+    customer_id = Column(UUID(as_uuid=True), nullable=False)
+    status = Column(Enum(DocumentStatus), default=DocumentStatus.DRAFT)
+    remarks = Column(Text, nullable=True)
+
+class PurchaseOrder(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
+    """Purchase Order for supplier orders."""
+    __tablename__ = "purchase_orders"
+    
+    purchase_order_no = Column(String(100), nullable=False, unique=True, index=True)
+    supplier_id = Column(UUID(as_uuid=True), nullable=False)
+    status = Column(Enum(DocumentStatus), default=DocumentStatus.DRAFT)
+    remarks = Column(Text, nullable=True)
+
 
 class DeliveryNote(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
     """Delivery Note for customer deliveries."""
@@ -34,7 +52,7 @@ class DeliveryNote(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
     delivery_date = Column(DateTime(timezone=True), nullable=True)
     
     # Warehouse
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
     
     # Status
     status = Column(Enum(DocumentStatus), default=DocumentStatus.DRAFT)
@@ -78,7 +96,7 @@ class DeliveryNoteItem(Base, UUIDMixin, TimestampMixin, TenantMixin):
     description = Column(Text, nullable=True)
     
     # Warehouse
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
     
     # Quantity
     qty = Column(Numeric(15, 3), nullable=False)
@@ -118,7 +136,7 @@ class PurchaseReceipt(Base, UUIDMixin, TimestampMixin, TenantMixin, AuditMixin):
     posting_date = Column(DateTime(timezone=True), default=datetime.utcnow)
     
     # Warehouse
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
     
     # Status
     status = Column(Enum(DocumentStatus), default=DocumentStatus.DRAFT)
@@ -157,7 +175,7 @@ class PurchaseReceiptItem(Base, UUIDMixin, TimestampMixin, TenantMixin):
     description = Column(Text, nullable=True)
     
     # Warehouse (can be overridden by put-away rule)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
     
     # Quantity
     qty = Column(Numeric(15, 3), nullable=False)

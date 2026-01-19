@@ -44,58 +44,33 @@ class SubscriptionStatus(str, enum.Enum):
     SUSPENDED = "suspended"
 
 
-class SubscriptionPlan(Base, UUIDMixin, TimestampMixin):
+class SubscriptionPlan(Base, UUIDMixin):
     """
     Subscription plan definitions.
-    Defines what features and limits are available for each plan tier.
     """
     __tablename__ = "subscription_plans"
     
-    # Plan info
     name = Column(String(100), nullable=False)
-    code = Column(String(50), unique=True, nullable=False, index=True)
+    code = Column(String(50), unique=True, nullable=True, index=True)
+    price = Column(Numeric(10, 2), nullable=True)
+    billing_cycle = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
-    plan_type = Column(Enum(PlanType), nullable=False, index=True)
-    
-    # Pricing
-    price_monthly = Column(Numeric(10, 2), nullable=True)
-    price_yearly = Column(Numeric(10, 2), nullable=True)
-    currency = Column(String(3), default="USD")
+    is_active = Column(Boolean, default=True)
+    is_public = Column(Boolean, default=True)
+    sort_order = Column(Integer, default=0)
     
     # Limits
-    max_users = Column(Integer, default=5)
-    max_teams = Column(Integer, default=3)
-    max_leads = Column(Integer, default=1000)
-    max_contacts = Column(Integer, default=5000)
-    max_deals = Column(Integer, default=500)
-    max_tickets = Column(Integer, default=1000)
-    max_products = Column(Integer, default=500)
-    max_storage_gb = Column(Integer, default=5)
-    max_api_calls_per_day = Column(Integer, default=10000)
+    max_users = Column(Integer, default=0)
+    max_teams = Column(Integer, default=0)
+    max_storage_gb = Column(Integer, default=0)
+    max_leads = Column(Integer, default=0)
+    max_contacts = Column(Integer, default=0)
+    max_deals = Column(Integer, default=0)
+    max_tickets = Column(Integer, default=0)
+    max_products = Column(Integer, default=0)
+    max_api_calls_per_day = Column(Integer, default=0)
     
-    # Features as JSON (more flexible than columns)
-    features = Column(JSONB, default=dict)
-    # Example features:
-    # {
-    #     "email_integration": true,
-    #     "calendar_sync": true,
-    #     "custom_fields": true,
-    #     "api_access": false,
-    #     "advanced_reporting": false,
-    #     "sso": false,
-    #     "audit_logs": false,
-    #     "dedicated_support": false
-    # }
-    
-    # Status
-    is_active = Column(Boolean, default=True)
-    is_public = Column(Boolean, default=True)  # Show in pricing page
-    
-    # Trial
-    trial_days = Column(Integer, default=14)
-    
-    # Sort order for display
-    sort_order = Column(Integer, default=0)
+    features = Column(JSONB, default=list)
     
     # Relationships
     subscriptions: Mapped[List["Subscription"]] = relationship(
@@ -104,16 +79,15 @@ class SubscriptionPlan(Base, UUIDMixin, TimestampMixin):
     )
     
     def __repr__(self):
-        return f"<SubscriptionPlan(code='{self.code}', type={self.plan_type})>"
+        return f"<SubscriptionPlan(name='{self.name}')>"
 
 
-class Subscription(Base, UUIDMixin, TimestampMixin):
+class Subscription(Base, UUIDMixin):
     """
-    Organization subscription - links organization to a plan.
+    Organization subscription.
     """
     __tablename__ = "subscriptions"
     
-    # Relations
     organization_id = Column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -126,40 +100,17 @@ class Subscription(Base, UUIDMixin, TimestampMixin):
         nullable=False
     )
     
-    # Status
-    status = Column(
-        Enum(SubscriptionStatus),
-        default=SubscriptionStatus.TRIAL,
-        nullable=False,
-        index=True
-    )
-    
-    # Dates
-    trial_starts_at = Column(DateTime(timezone=True), nullable=True)
-    trial_ends_at = Column(DateTime(timezone=True), nullable=True)
-    starts_at = Column(DateTime(timezone=True), nullable=True)
-    ends_at = Column(DateTime(timezone=True), nullable=True)
-    cancelled_at = Column(DateTime(timezone=True), nullable=True)
-    
-    # Billing
-    billing_cycle = Column(
-        Enum(BillingCycle),
-        default=BillingCycle.MONTHLY,
-        nullable=False
-    )
-    next_billing_date = Column(DateTime(timezone=True), nullable=True)
-    
-    # Payment provider info
     stripe_subscription_id = Column(String(255), nullable=True)
     stripe_customer_id = Column(String(255), nullable=True)
-    
-    # Current usage (updated periodically)
-    current_users = Column(Integer, default=0)
-    current_teams = Column(Integer, default=0)
-    current_storage_mb = Column(Integer, default=0)
-    
-    # Extra data
-    extra_data = Column(JSONB, default=dict)
+    status = Column(String(50), nullable=True)
+    starts_at = Column(DateTime(timezone=True), nullable=True)
+    ends_at = Column(DateTime(timezone=True), nullable=True)
+    trial_starts_at = Column(DateTime(timezone=True), nullable=True)
+    trial_ends_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    auto_renew = Column(Boolean, default=True)
+    current_storage_mb = Column(Numeric(15, 2), default=0)
+    extra_data = Column(JSONB, nullable=True)
     
     # Relationships
     organization: Mapped["Organization"] = relationship(
@@ -170,26 +121,21 @@ class Subscription(Base, UUIDMixin, TimestampMixin):
         "SubscriptionPlan",
         back_populates="subscriptions"
     )
-    
-    @property
-    def is_active(self) -> bool:
-        """Check if subscription is currently active."""
-        return self.status in [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL]
-    
-    @property
-    def is_trial(self) -> bool:
-        """Check if subscription is in trial period."""
-        return self.status == SubscriptionStatus.TRIAL
+    invoices: Mapped[List["SubscriptionInvoice"]] = relationship(
+        "SubscriptionInvoice",
+        back_populates="subscription",
+        cascade="all, delete-orphan"
+    )
     
     def __repr__(self):
         return f"<Subscription(org_id={self.organization_id}, status={self.status})>"
 
 
-class SubscriptionUsage(Base, UUIDMixin, TimestampMixin):
+class SubscriptionInvoice(Base, UUIDMixin):
     """
-    Track subscription usage over time for billing and analytics.
+    Subscription invoices.
     """
-    __tablename__ = "subscription_usage"
+    __tablename__ = "subscription_invoices"
     
     subscription_id = Column(
         UUID(as_uuid=True),
@@ -198,22 +144,46 @@ class SubscriptionUsage(Base, UUIDMixin, TimestampMixin):
         index=True
     )
     
-    # Period
-    period_start = Column(DateTime(timezone=True), nullable=False)
-    period_end = Column(DateTime(timezone=True), nullable=False)
+    stripe_invoice_id = Column(String(255), nullable=True)
+    invoice_number = Column(String(100), nullable=True)
+    amount = Column(Numeric(10, 2), nullable=True)
+    status = Column(String(50), nullable=True)
+    billing_period_start = Column(DateTime(timezone=True), nullable=True)
+    billing_period_end = Column(DateTime(timezone=True), nullable=True)
     
-    # Usage metrics
-    users_count = Column(Integer, default=0)
-    teams_count = Column(Integer, default=0)
-    leads_created = Column(Integer, default=0)
-    contacts_created = Column(Integer, default=0)
-    deals_created = Column(Integer, default=0)
-    tickets_created = Column(Integer, default=0)
-    storage_used_mb = Column(Integer, default=0)
-    api_calls = Column(Integer, default=0)
-    
-    # Status
-    is_finalized = Column(Boolean, default=False)
+    # Relationships
+    subscription: Mapped["Subscription"] = relationship("Subscription", back_populates="invoices")
+    payments: Mapped[List["SubscriptionPayment"]] = relationship(
+        "SubscriptionPayment",
+        back_populates="invoice",
+        cascade="all, delete-orphan"
+    )
     
     def __repr__(self):
-        return f"<SubscriptionUsage(sub_id={self.subscription_id}, period={self.period_start})>"
+        return f"<SubscriptionInvoice(id={self.id}, number={self.invoice_number})>"
+
+
+class SubscriptionPayment(Base, UUIDMixin):
+    """
+    Subscription payments.
+    """
+    __tablename__ = "subscription_payments"
+    
+    invoice_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("subscription_invoices.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    
+    stripe_payment_intent_id = Column(String(255), nullable=True)
+    amount = Column(Numeric(10, 2), nullable=True)
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(50), nullable=True)
+    
+    # Relationships
+    invoice: Mapped["SubscriptionInvoice"] = relationship("SubscriptionInvoice", back_populates="payments")
+    
+    def __repr__(self):
+        return f"<SubscriptionPayment(id={self.id}, amount={self.amount})>"
+

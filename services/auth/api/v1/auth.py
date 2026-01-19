@@ -166,8 +166,8 @@ async def login(
     user_org_role = await auth_service.get_user_organization_context(user.id, org_id)
     
     if user_org_role:
-        org_id = user_org_role.organization_id
-        org_name = user_org_role.organization.name if user_org_role.organization else None
+        org_id = user_org_role.user.organization_id
+        org_name = user_org_role.user.organization.name if user_org_role.user.organization else None
         if user_org_role.role:
             role_code = user_org_role.role.code
             permissions = await auth_service.get_role_permissions(user_org_role.role_id)
@@ -267,7 +267,7 @@ async def refresh_token(
     permissions = []
     
     if user_org_role:
-        org_id = user_org_role.organization_id
+        org_id = user_org_role.user.organization_id
         if user_org_role.role:
             role_code = user_org_role.role.code
             permissions = await auth_service.get_role_permissions(user_org_role.role_id)

@@ -48,7 +48,7 @@ class SerialNo(Base, UUIDMixin, TimestampMixin, TenantMixin):
     item_id = Column(UUID(as_uuid=True), ForeignKey("items.id"), nullable=False, index=True)
     
     # Current location
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses_extended.id"), nullable=True)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
     
     # Status
     status = Column(String(50), default="available")  # available, delivered, expired, damaged

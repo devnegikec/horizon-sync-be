@@ -11,7 +11,7 @@ from shared.models.user import User, UserOrganizationRole, UserStatus
 from shared.models.organization import Organization
 from shared.models.role import Role
 from shared.models.auth import Invitation, InvitationStatus
-from shared.models.team import Team, TeamMember
+from shared.models.team import Team, UserTeam
 from shared.schemas.user import UserListFilter
 from shared.schemas.common import PaginatedResponse
 from shared.security.password import hash_password, verify_password
@@ -77,23 +77,23 @@ class UserService:
         user_id: UUID,
         organization_id: UUID,
         role_id: Optional[UUID] = None,
-        is_primary: bool = False,
     ) -> UserOrganizationRole:
         """Add user to an organization with a role."""
-        user_org_role = UserOrganizationRole(
+        # Since user belongs to one organization, update the user record
+        user = await self.get_user_by_id(user_id)
+        if user:
+            user.organization_id = organization_id
+            await self.db.flush()
+
+        user_role = UserOrganizationRole(
             user_id=user_id,
-            organization_id=organization_id,
-            role_id=role_id,
-            is_primary=is_primary,
-            is_active=True,
-            status="active",
-            joined_at=datetime.utcnow(),
+            role_id=role_id
         )
         
-        self.db.add(user_org_role)
+        self.db.add(user_role)
         await self.db.flush()
         
-        return user_org_role
+        return user_role
     
     async def get_user_organization_role(
         self,
@@ -103,37 +103,39 @@ class UserService:
         """Get user's role in an organization."""
         query = select(UserOrganizationRole).options(
             selectinload(UserOrganizationRole.role)
-        ).where(
+        ).join(User).where(
             UserOrganizationRole.user_id == user_id,
-            UserOrganizationRole.organization_id == organization_id
+            User.organization_id == organization_id
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
     async def get_user_organizations(self, user_id: UUID) -> List[Dict]:
-        """Get all organizations a user belongs to."""
-        query = select(UserOrganizationRole).options(
-            selectinload(UserOrganizationRole.organization),
-            selectinload(UserOrganizationRole.role)
+        """Get all organizations a user belongs to (currently only one)."""
+        query = select(User).options(
+            selectinload(User.organization),
+            selectinload(User.user_roles).selectinload(UserOrganizationRole.role)
         ).where(
-            UserOrganizationRole.user_id == user_id,
-            UserOrganizationRole.is_active == True
+            User.id == user_id,
+            User.is_active == True
         )
         
         result = await self.db.execute(query)
-        user_org_roles = result.scalars().all()
+        user = result.scalar_one_or_none()
         
+        if not user or not user.organization:
+            return []
+        
+        # We take the first role as primary for now, or all roles
         return [
             {
-                "organization_id": uor.organization_id,
-                "organization_name": uor.organization.name if uor.organization else None,
-                "organization_slug": uor.organization.slug if uor.organization else None,
-                "role_id": str(uor.role_id) if uor.role_id else None,
-                "role_name": uor.role.name if uor.role else None,
-                "is_primary": uor.is_primary,
-                "joined_at": uor.joined_at,
+                "organization_id": user.organization_id,
+                "organization_name": user.organization.name,
+                "role_id": str(ur.role_id),
+                "role_name": ur.role.name,
+                "is_primary": True, # Always primary in 1:N
             }
-            for uor in user_org_roles
+            for ur in user.user_roles
         ]
     
     async def get_user_teams(
@@ -142,15 +144,13 @@ class UserService:
         organization_id: UUID
     ) -> List[Dict]:
         """Get user's teams in an organization."""
-        query = select(TeamMember).options(
-            selectinload(TeamMember.team)
+        query = select(UserTeam).options(
+            selectinload(UserTeam.team)
         ).join(
-            Team, Team.id == TeamMember.team_id
+            Team, Team.id == UserTeam.team_id
         ).where(
-            TeamMember.user_id == user_id,
-            Team.organization_id == organization_id,
-            TeamMember.is_active == True,
-            Team.deleted_at.is_(None)
+            UserTeam.user_id == user_id,
+            Team.organization_id == organization_id
         )
         
         result = await self.db.execute(query)
@@ -160,8 +160,7 @@ class UserService:
             {
                 "team_id": str(m.team_id),
                 "team_name": m.team.name if m.team else None,
-                "role": m.role.value,
-                "joined_at": m.joined_at,
+                "role": m.team_role,
             }
             for m in memberships
         ]
@@ -175,11 +174,8 @@ class UserService:
     ) -> PaginatedResponse:
         """List users in an organization with pagination."""
         # Base query
-        query = select(User).join(
-            UserOrganizationRole,
-            UserOrganizationRole.user_id == User.id
-        ).where(
-            UserOrganizationRole.organization_id == organization_id
+        query = select(User).where(
+            User.organization_id == organization_id
         )
         
         # Apply filters
@@ -196,9 +192,9 @@ class UserService:
             if filters.status:
                 query = query.where(User.status == filters.status)
             if filters.role_id:
-                query = query.where(UserOrganizationRole.role_id == filters.role_id)
+                query = query.join(UserOrganizationRole).where(UserOrganizationRole.role_id == filters.role_id)
             if filters.is_active is not None:
-                query = query.where(UserOrganizationRole.is_active == filters.is_active)
+                query = query.where(User.is_active == filters.is_active)
         
         # Count total
         count_query = select(func.count()).select_from(query.subquery())
@@ -224,12 +220,9 @@ class UserService:
         user_id: UUID
     ) -> Optional[User]:
         """Get a user if they belong to the organization."""
-        query = select(User).join(
-            UserOrganizationRole,
-            UserOrganizationRole.user_id == User.id
-        ).where(
+        query = select(User).where(
             User.id == user_id,
-            UserOrganizationRole.organization_id == organization_id
+            User.organization_id == organization_id
         )
         
         result = await self.db.execute(query)
@@ -307,14 +300,14 @@ class UserService:
         user_id: UUID,
         team_id: UUID,
         role: str = "member"
-    ) -> TeamMember:
+    ) -> UserTeam:
         """Add user to a team."""
         from shared.models.team import TeamRole
         
-        team_member = TeamMember(
+        team_member = UserTeam(
             team_id=team_id,
             user_id=user_id,
-            role=TeamRole(role),
+            team_role=role,
             is_active=True,
             joined_at=datetime.utcnow(),
         )

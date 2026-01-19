@@ -106,7 +106,6 @@ async def onboard_organization(
         user_id=owner.id,
         organization_id=organization.id,
         role_id=owner_role.id,
-        is_primary=True,
     )
     
     # Activate organization
