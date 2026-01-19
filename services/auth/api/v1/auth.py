@@ -212,7 +212,6 @@ async def login(
         email=user.email,
         first_name=user.first_name,
         last_name=user.last_name,
-        organization_id=org_id,
         organization_name=org_name,
         role=role_code,
         permissions=permissions,

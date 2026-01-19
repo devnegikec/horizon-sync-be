@@ -51,7 +51,6 @@ class LoginResponse(BaseSchema):
     last_name: Optional[str] = None
     
     # Organization context
-    organization_id: Optional[UUID] = None
     organization_name: Optional[str] = None
     role: Optional[str] = None
     permissions: List[str] = []
