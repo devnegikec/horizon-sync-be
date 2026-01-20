@@ -42,3 +42,5 @@ shared/models/__pycache__/
 shared/schemas/__pycache__/
 shared/security/__pycache__/
 shared/utils/__pycache__/
+scripts/__pycache__/
+*.txt

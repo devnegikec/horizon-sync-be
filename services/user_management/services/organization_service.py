@@ -88,7 +88,7 @@ class OrganizationService:
         
         if not plan:
             # Get free plan as fallback
-            query = select(SubscriptionPlan).where(SubscriptionPlan.plan_type == PlanType.FREE)
+            query = select(SubscriptionPlan).where(SubscriptionPlan.code == PlanType.FREE.value)
             result = await self.db.execute(query)
             plan = result.scalar_one_or_none()
         
