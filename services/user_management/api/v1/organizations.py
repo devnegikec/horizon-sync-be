@@ -97,7 +97,7 @@ async def onboard_organization(
     # Create default subscription (free/trial)
     subscription = await org_service.create_subscription(
         organization_id=organization.id,
-        plan_code=onboard_data.plan.value if onboard_data.plan else "free",
+        plan_code=onboard_data.plan if onboard_data.plan else "free",
     )
     
     # Create default roles for organization
