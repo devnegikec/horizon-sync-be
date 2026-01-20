@@ -83,6 +83,13 @@ class User(Base, UUIDMixin, TimestampMixin):
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     display_name = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    
+    # Settings
+    timezone = Column(String(50), nullable=True, default="UTC")
+    language = Column(String(10), nullable=True, default="en")
+    preferences = Column(JSONB, nullable=True, default=dict)
     
     # Account type
     user_type = Column(String(50), nullable=True, default=UserType.REGULAR.value)

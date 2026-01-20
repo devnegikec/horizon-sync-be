@@ -74,12 +74,17 @@ async def onboard_organization(
         slug=slug,
         organization_type=onboard_data.organization_type,
         industry=onboard_data.industry,
+        settings={
+            "timezone": onboard_data.timezone,
+            "currency": onboard_data.currency,
+        }
     )
     
     # Create owner user
     owner = await user_service.create_user(
         email=onboard_data.owner_email,
         password=onboard_data.owner_password,
+        organization_id=organization.id,
         first_name=onboard_data.owner_first_name,
         last_name=onboard_data.owner_last_name,
         phone=onboard_data.owner_phone,

@@ -11,8 +11,8 @@ from shared.middleware.auth import require_permissions
 from shared.middleware.tenant import require_tenant
 from shared.schemas.common import PaginatedResponse, SuccessResponse
 from shared.security.jwt import TokenPayload
-from services.inventory.models.warehouse_extended import (
-    WarehouseExtended, WarehouseType, PutAwayRule, PickList, PickListItem
+from services.inventory.models.warehouse import (
+    Warehouse, WarehouseType, PutAwayRule, PickList, PickListItem
 )
 
 
@@ -220,32 +220,32 @@ async def list_warehouses(
     db: AsyncSession = Depends(get_async_session)
 ):
     """List all warehouses with pagination and filters."""
-    query = select(WarehouseExtended).where(
-        WarehouseExtended.organization_id == tenant_id,
-        WarehouseExtended.deleted_at.is_(None)
+    query = select(Warehouse).where(
+        Warehouse.organization_id == tenant_id,
+        Warehouse.deleted_at.is_(None)
     )
     
     if search:
         query = query.where(
             or_(
-                WarehouseExtended.name.ilike(f"%{search}%"),
-                WarehouseExtended.code.ilike(f"%{search}%")
+                Warehouse.name.ilike(f"%{search}%"),
+                Warehouse.code.ilike(f"%{search}%")
             )
         )
     
     if warehouse_type:
-        query = query.where(WarehouseExtended.warehouse_type == warehouse_type)
+        query = query.where(Warehouse.warehouse_type == warehouse_type)
     
     if is_active is not None:
-        query = query.where(WarehouseExtended.is_active == is_active)
+        query = query.where(Warehouse.is_active == is_active)
     
     if parent_warehouse_id is not None:
-        query = query.where(WarehouseExtended.parent_warehouse_id == parent_warehouse_id)
+        query = query.where(Warehouse.parent_warehouse_id == parent_warehouse_id)
     
     total = (await db.execute(select(func.count()).select_from(query.subquery()))).scalar() or 0
     
     warehouses = (await db.execute(
-        query.order_by(WarehouseExtended.name)
+        query.order_by(Warehouse.name)
         .offset((page - 1) * page_size)
         .limit(page_size)
     )).scalars().all()
@@ -267,9 +267,9 @@ async def create_warehouse(
     # Check code uniqueness if provided
     if data.code:
         existing = (await db.execute(
-            select(WarehouseExtended).where(
-                WarehouseExtended.organization_id == tenant_id,
-                WarehouseExtended.code == data.code
+            select(Warehouse).where(
+                Warehouse.organization_id == tenant_id,
+                Warehouse.code == data.code
             )
         )).scalar_one_or_none()
         if existing:
@@ -278,9 +278,9 @@ async def create_warehouse(
     # Check parent warehouse exists
     if data.parent_warehouse_id:
         parent = (await db.execute(
-            select(WarehouseExtended).where(
-                WarehouseExtended.id == data.parent_warehouse_id,
-                WarehouseExtended.organization_id == tenant_id
+            select(Warehouse).where(
+                Warehouse.id == data.parent_warehouse_id,
+                Warehouse.organization_id == tenant_id
             )
         )).scalar_one_or_none()
         if not parent:
@@ -290,13 +290,13 @@ async def create_warehouse(
     if not data.code:
         # Simple auto-generation logic
         count = (await db.execute(
-            select(func.count()).select_from(WarehouseExtended).where(
-                WarehouseExtended.organization_id == tenant_id
+            select(func.count()).select_from(Warehouse).where(
+                Warehouse.organization_id == tenant_id
             )
         )).scalar() or 0
         data.code = f"WH-{count + 1:04d}"
     
-    warehouse = WarehouseExtended(
+    warehouse = Warehouse(
         organization_id=tenant_id,
         created_by=UUID(current_user.sub),
         **data.model_dump(exclude_unset=True)
@@ -318,10 +318,10 @@ async def get_warehouse(
 ):
     """Get warehouse by ID."""
     warehouse = (await db.execute(
-        select(WarehouseExtended).where(
-            WarehouseExtended.id == warehouse_id,
-            WarehouseExtended.organization_id == tenant_id,
-            WarehouseExtended.deleted_at.is_(None)
+        select(Warehouse).where(
+            Warehouse.id == warehouse_id,
+            Warehouse.organization_id == tenant_id,
+            Warehouse.deleted_at.is_(None)
         )
     )).scalar_one_or_none()
     
@@ -341,10 +341,10 @@ async def update_warehouse(
 ):
     """Update warehouse."""
     warehouse = (await db.execute(
-        select(WarehouseExtended).where(
-            WarehouseExtended.id == warehouse_id,
-            WarehouseExtended.organization_id == tenant_id,
-            WarehouseExtended.deleted_at.is_(None)
+        select(Warehouse).where(
+            Warehouse.id == warehouse_id,
+            Warehouse.organization_id == tenant_id,
+            Warehouse.deleted_at.is_(None)
         )
     )).scalar_one_or_none()
     
@@ -371,9 +371,9 @@ async def delete_warehouse(
 ):
     """Soft delete warehouse."""
     warehouse = (await db.execute(
-        select(WarehouseExtended).where(
-            WarehouseExtended.id == warehouse_id,
-            WarehouseExtended.organization_id == tenant_id
+        select(Warehouse).where(
+            Warehouse.id == warehouse_id,
+            Warehouse.organization_id == tenant_id
         )
     )).scalar_one_or_none()
     
