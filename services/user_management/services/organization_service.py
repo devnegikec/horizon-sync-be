@@ -13,6 +13,10 @@ from shared.models.role import Role, Permission, RolePermission
 from shared.models.user import User, UserOrganizationRole
 from shared.models.team import Team
 from shared.schemas.organization import OrganizationStats
+from shared.security.permissions import (
+    OWNER_PERMISSIONS, ADMIN_PERMISSIONS, MANAGER_PERMISSIONS,
+    MEMBER_PERMISSIONS, VIEWER_PERMISSIONS
+)
 
 
 class OrganizationService:
@@ -84,7 +88,7 @@ class OrganizationService:
         
         if not plan:
             # Get free plan as fallback
-            query = select(SubscriptionPlan).where(SubscriptionPlan.plan_type == PlanType.FREE)
+            query = select(SubscriptionPlan).where(SubscriptionPlan.code == PlanType.FREE.value)
             result = await self.db.execute(query)
             plan = result.scalar_one_or_none()
         

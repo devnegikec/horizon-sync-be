@@ -62,6 +62,12 @@ A comprehensive, multi-tenant ERP system built with FastAPI microservices archit
 - Stock levels & movements
 - Inventory adjustments
 
+### Billing & Accounting
+- Customer & Supplier management
+- Invoicing & Payments
+- Chart of Accounts
+- Journal Entries & General Ledger
+
 ## Quick Start
 
 ### Prerequisites
@@ -107,6 +113,7 @@ uvicorn services.user_management.main:app --port 8002
 uvicorn services.lead_to_order.main:app --port 8003
 uvicorn services.support_ticket.main:app --port 8004
 uvicorn services.inventory.main:app --port 8005
+uvicorn services.billing.main:app --port 8006
 ```
 
 ## API Endpoints
@@ -156,6 +163,15 @@ uvicorn services.inventory.main:app --port 8005
 | GET/POST | /api/v1/products | List/Create products |
 | GET/POST | /api/v1/warehouses | List/Create warehouses |
 | POST | /api/v1/inventory/adjust | Adjust stock |
+
+### Billing & Accounting (port 8006)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET/POST | /api/v1/customers | List/Create customers |
+| GET/POST | /api/v1/invoices | List/Create invoices |
+| GET/POST | /api/v1/payments | List/Create payments |
+| GET/POST | /api/v1/accounting/accounts | Chart of accounts |
+| POST | /api/v1/accounting/journal | Create journal entry |
 
 ## Project Structure
 

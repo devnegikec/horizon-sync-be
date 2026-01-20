@@ -263,6 +263,7 @@ async def accept_invitation(
         user = await user_service.create_user(
             email=invitation.email,
             password=accept_data.password,
+            organization_id=invitation.organization_id,
             first_name=accept_data.first_name or invitation.first_name,
             last_name=accept_data.last_name or invitation.last_name,
         )

@@ -39,6 +39,7 @@ class UserService:
         self,
         email: str,
         password: str,
+        organization_id: UUID,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
         phone: Optional[str] = None,
@@ -49,6 +50,7 @@ class UserService:
         user = User(
             email=email.lower(),
             password_hash=hash_password(password),
+            organization_id=organization_id,
             first_name=first_name,
             last_name=last_name,
             phone=phone,

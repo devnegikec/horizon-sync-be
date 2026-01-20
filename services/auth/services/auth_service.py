@@ -13,6 +13,7 @@ from shared.models.auth import RefreshToken, PasswordReset, EmailVerification
 from shared.models.role import Role, RolePermission, Permission, SystemRole
 from shared.models.organization import Organization, OrganizationStatus
 from shared.security.password import verify_password, hash_password
+from shared.utils.helpers import generate_slug
 from services.auth.config import auth_settings
 
 
@@ -39,6 +40,13 @@ class AuthService:
         # 1. Create Organization
         organization = Organization(
             name=organization_name,
+            slug=generate_slug(organization_name),
+            status=OrganizationStatus.ACTIVE.value,
+            settings={
+                "timezone": "UTC",
+                "currency": "USD",
+                "language": "en"
+            }
         )
         self.db.add(organization)
         await self.db.flush()
@@ -58,12 +66,13 @@ class AuthService:
         await self.db.flush()
 
         # 3. Create/Get Owner Role for this organization
-        # In a real system, we might have a template of roles to create for each new org
         owner_role = Role(
             organization_id=organization.id,
             name="Owner",
             code=SystemRole.OWNER.value,
-            is_active=True
+            is_active=True,
+            is_system=True,
+            hierarchy_level=100
         )
         self.db.add(owner_role)
         await self.db.flush()

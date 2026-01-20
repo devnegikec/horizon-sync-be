@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from shared.config import settings
+from sqlalchemy import text
 from shared.database.base import Base
 
 # Create async engine
@@ -30,10 +31,12 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
-
 async def init_db() -> None:
-    """Initialize database - create all tables."""
+    """Initialize database - create all tables with advisory lock to prevent race conditions."""
     async with engine.begin() as conn:
+        # Use a Postgres advisory lock to ensure only one service runs migrations at a time
+        # 12345 is an arbitrary lock ID
+        await conn.execute(text("SELECT pg_advisory_xact_lock(12345)"))
         await conn.run_sync(Base.metadata.create_all)
 
 
