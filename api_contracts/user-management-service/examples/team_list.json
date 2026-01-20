@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440004",
+      "name": "Engineering",
+      "description": "Product development team",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440002",
+      "member_count": 5,
+      "created_at": "2026-01-01T12:00:00Z"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440005",
+      "name": "Marketing",
+      "description": "Growth and marketing team",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440002",
+      "member_count": 3,
+      "created_at": "2026-01-01T12:00:00Z"
+    }
+  ],
+  "total": 2,
+  "page": 1,
+  "size": 10,
+  "pages": 1
+}

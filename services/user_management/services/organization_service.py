@@ -12,6 +12,7 @@ from shared.models.subscription import Subscription, SubscriptionPlan, Subscript
 from shared.models.role import Role, Permission, RolePermission
 from shared.models.user import User, UserOrganizationRole
 from shared.models.team import Team
+from shared.schemas.organization import OrganizationStats
 
 
 class OrganizationService:
