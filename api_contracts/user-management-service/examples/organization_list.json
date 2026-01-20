@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440002",
+      "name": "Acme Corp",
+      "slug": "acme-corp",
+      "status": "active",
+      "is_active": true,
+      "organization_type": "smb",
+      "industry": "Technology",
+      "created_at": "2026-01-01T12:00:00Z",
+      "updated_at": "2026-01-01T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "size": 10,
+  "pages": 1
+}

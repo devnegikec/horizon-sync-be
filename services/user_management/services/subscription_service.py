@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from shared.models.subscription import (
     Subscription, SubscriptionPlan, SubscriptionStatus,
-    SubscriptionUsage, BillingCycle, PlanType
+    BillingCycle, PlanType
 )
 from shared.models.user import User
 from shared.models.team import Team
