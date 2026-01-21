@@ -352,6 +352,7 @@ async def forgot_password(
     
     user = await auth_service.get_user_by_email(reset_data.email)
     
+    token = None
     if user and user.is_active:
         # Generate reset token
         token = generate_token(32)
@@ -374,7 +375,8 @@ async def forgot_password(
     # Always return success to prevent email enumeration
     return PasswordResetResponse(
         message="If an account exists with this email, a reset link will be sent",
-        expires_in=3600
+        expires_in=3600,
+        token=token
     )
 
 

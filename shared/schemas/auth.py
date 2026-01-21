@@ -101,6 +101,7 @@ class PasswordResetResponse(BaseSchema):
     
     message: str = "If an account exists with this email, a reset link will be sent"
     expires_in: int = 3600  # 1 hour
+    token: Optional[str] = None
 
 
 class PasswordResetConfirm(BaseSchema):
