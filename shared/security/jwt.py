@@ -1,10 +1,10 @@
 """JWT token handling utilities."""
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from uuid import UUID
 
 from jose import JWTError, jwt
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from shared.config import settings
 
@@ -16,9 +16,19 @@ class TokenPayload(BaseModel):
     role: Optional[str] = None  # Role code
     permissions: list[str] = Field(default_factory=list)
     type: str = "access"  # access or refresh
-    exp: datetime
-    iat: datetime
+    exp: Optional[Union[datetime, int, float]] = None  # Can be datetime or Unix timestamp
+    iat: Optional[Union[datetime, int, float]] = None  # Can be datetime or Unix timestamp
     jti: Optional[str] = None  # Token ID for revocation
+    
+    @field_validator('exp', 'iat', mode='before')
+    @classmethod
+    def convert_timestamp_to_datetime(cls, v):
+        """Convert Unix timestamps to datetime objects."""
+        if v is None:
+            return None
+        if isinstance(v, (int, float)):
+            return datetime.fromtimestamp(v)
+        return v
 
 
 def create_access_token(
