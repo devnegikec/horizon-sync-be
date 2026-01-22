@@ -76,23 +76,17 @@ class OrganizationUpdate(BaseSchema):
     primary_color: Optional[str] = Field(default=None, pattern="^#[0-9A-Fa-f]{6}$")
 
 
-class OrganizationResponse(OrganizationBase):
+class OrganizationResponse(BaseSchema):
     """Schema for organization response."""
     
     id: UUID
+    name: str
     slug: str
     status: OrganizationStatus
     is_active: bool
-    logo_url: Optional[str] = None
-    primary_color: Optional[str] = None
-    domain: Optional[str] = None
     owner_id: Optional[UUID] = None
     created_at: datetime
     updated_at: datetime
-    
-    # Computed fields
-    member_count: Optional[int] = None
-    team_count: Optional[int] = None
 
 
 class OrganizationOnboard(BaseSchema):
